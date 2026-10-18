@@ -2,6 +2,9 @@ plugins {
     id("com.android.application")
 }
 
+val nativePayloadDir = providers.gradleProperty("nativePayloadDir").orNull
+val localDebugSigning = providers.gradleProperty("localDebugSigning").orNull == "true"
+
 android {
     namespace = "df.root"
     compileSdk = 37
@@ -10,8 +13,8 @@ android {
         applicationId = "df.root"
         minSdk = 32
         targetSdk = 37
-        versionCode = 46
-        versionName = "1.16-vr"
+        versionCode = 47
+        versionName = "1.16-vr-logfix.1"
 
         ndk {
             abiFilters += listOf("arm64-v8a")
@@ -29,10 +32,10 @@ android {
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("keystore")
+            signingConfig = signingConfigs.getByName("debug")
         }
         release {
-            signingConfig = signingConfigs.getByName("keystore")
+            signingConfig = signingConfigs.getByName(if (localDebugSigning) "debug" else "keystore")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -66,15 +69,20 @@ androidComponents {
         buildConfig = true
     }
 
-    externalNativeBuild {
-        cmake {
-            path("src/main/jni/CMakeLists.txt")
+    if (nativePayloadDir == null) {
+        externalNativeBuild {
+            cmake {
+                path("src/main/jni/CMakeLists.txt")
+            }
         }
+    } else {
+        sourceSets.getByName("main").jniLibs.srcDir(file(nativePayloadDir))
     }
 
     packaging {
         jniLibs {
             useLegacyPackaging = true
+            if (nativePayloadDir != null) keepDebugSymbols += "**/*.so"
         }
     }
 }

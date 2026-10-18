@@ -1,5 +1,25 @@
 # DirtyFrag (CVE-2026-43284)
 
+本分支修复 `1.16-vr` 的日志采集耗电问题，版本为 `1.16-vr-logfix.1`，包名仍为 `df.root`。
+
+`kmsglog` 遇到 SELinux 权限拒绝时会记录原因并退出；空闲时等待日志或运行时限，不再每 50ms 唤醒。修复同时覆盖满长度消息的换行缓冲区、短写和进程退出后的互斥锁释放。内核日志覆盖导致的 `EPIPE` 会有限退避，正常日志仍逐条同步到磁盘。
+
+本次保留上游的 root 加载流程。下面的日志修复构建方式从上游 `v1.16-vr` 发布包提取三个未修改的原生载荷，校验固定 SHA-256；应用代码与日志程序在本机构建。
+
+```sh
+python tools/build_logfix.py --base-apk /path/to/DirtyFrag-1.16-vr.apk
+```
+
+需要 JDK 21、Android SDK 37 和 NDK 27.2.12479018。构建使用本机标准 Android debug keystore；密钥不进入仓库。输出为 `app/build/outputs/apk/release/dirtyfrag.apk`，载荷哈希记录在 `out/logfix/manifest.json`。签名与上游不同，Android 可能要求卸载原包后安装，应先保存应用设置。
+
+原生错误处理测试可在已连接的 Android shell 上运行，不读取真实内核日志，也不执行 root 加载流程：
+
+```sh
+python tools/test_kmsglog.py --ssh root@PHONE --port PORT
+```
+
+以下为上游说明。
+
 DirtyFrag is a hardened fork of [diabl0w/DFRoot](https://github.com/diabl0w/DFRoot). It exploits
 CVE-2026-43284 (DirtyFrag), a kernel page cache write primitive, to load a kernel module without an
 unlocked bootloader and without a custom kernel. The fork targets Samsung phones (OneUI, RKP and KDP

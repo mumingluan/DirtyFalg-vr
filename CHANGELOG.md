@@ -1,3 +1,10 @@
+## 1.16-vr-logfix.1 (47)
+
+- Stop the kernel-log follower on poll/read permission failures instead of spinning.
+- Wait until data or the lifetime limit when idle; back off and bound ring-overrun recovery.
+- Reserve space for a missing newline, handle short writes, and release singleton locks on process exit.
+- Add Android-native error-path tests and a local debug-signed build using verified 1.16-vr payloads.
+
 ## 1.16-vr (46)
 
 - Rebased on mitschud v1.16 (upstream DFRoot 4.2-4.5 merged): vendor hardening
